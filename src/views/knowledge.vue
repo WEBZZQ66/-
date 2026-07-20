@@ -7,6 +7,35 @@
             </template>
         </PageHead>
         <TableSearch :formItem="formItem" @search="handleSearch" />
+        <el-table :data="tableData" style="width: 100%;margin-top: 25px;">
+            <el-table-column label="文章标题" fixed="left">
+                <template #default="scope">
+                    <div style="display: flex;align-items: center;">
+                        <el-icon><timer /></el-icon>
+                        <span>{{scope.row.title}}</span>
+                    </div>    
+                </template>    
+            </el-table-column>
+            <el-table-column label="分类" width="200">
+                <template #default="scope">
+                    <div style="display: flex;align-items: center;">
+                        <el-icon><timer /></el-icon>
+                        <span>{{categoryMap[scope.row.categoryId]}}</span>
+                    </div>    
+                </template>    
+            </el-table-column>
+            <el-table-column prop="authorName" label="作者" width="150" />
+            <el-table-column prop="readCount" label="阅读量" width="150" />
+            <el-table-column prop="publishedAt" label="发布时间" width="150"/>
+            <el-table-column label="操作" width="300" fixed="right">
+                <template #default="scope">
+                    <el-button text type="primary">编辑</el-button>
+                    <el-button v-if="scope.row.status === 0||scope.row.status === 2" text type="success">发布</el-button>
+                    <el-button v-if="scope.row.status === 1" text type="warning">下线</el-button>
+                    <el-button text type="danger">删除</el-button> 
+                </template>    
+            </el-table-column>
+        </el-table>
     </div>
 </template>
 <script setup>
@@ -14,6 +43,7 @@ import PageHead from '@/components/PageHead.vue'
 import TableSearch from '@/components/TableSearch.vue'
 import { categoryTree, articlePage } from '@/api/admin'
 import { ref, onMounted, reactive } from 'vue'
+
 
 const formItem = [
     {
@@ -40,16 +70,23 @@ const formItem = [
 
 //分页参数
 const pagination = reactive({
-    page: 1,
-    pageSize: 10,
-    total: 0
+   currentPage: 1,
+   size: 10,
+   total: 0,
 })
-const handleSearch = (form) => {
-    console.log(form, '查询参数')
-    articlePage(pagination).then(data => {
-        console.log(data, '分页数据')
-        // 处理返回的数据
-    })
+//表格数据
+const tableData = ref([])
+
+const handleSearch = async(formData) => {
+    console.log(formData, '查询参数')
+
+    const params = {
+        ...formData,
+        ...pagination
+    }
+    const {records, total} = await articlePage(params)
+    tableData.value = records
+    
 }
 
 //分类映射
@@ -68,5 +105,7 @@ onMounted(async () => {
         }
     })
     formItem[1].options = categoies.value
+    //获取文章列表
+    handleSearch()
 })
 </script>
