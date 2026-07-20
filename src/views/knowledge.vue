@@ -35,7 +35,14 @@
                     <el-button text type="danger">删除</el-button> 
                 </template>    
             </el-table-column>
-        </el-table>
+        </el-table>、
+        <el-pagination
+            style="margin-top: 25px;align-items:right;"
+            :page-size="pagination.size"
+            layout=" prev, pager, next"
+            :total="pagination.total"
+            @change="handleChange"
+        />
     </div>
 </template>
 <script setup>
@@ -86,9 +93,13 @@ const handleSearch = async(formData) => {
     }
     const {records, total} = await articlePage(params)
     tableData.value = records
-    
+    pagination.total = total
 }
 
+const handleChange = (page) => {
+    pagination.currentPage = page
+    handleSearch()
+}
 //分类映射
 const categoryMap = reactive({})
 //分类列表
