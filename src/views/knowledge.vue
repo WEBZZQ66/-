@@ -2,7 +2,7 @@
     <div>
         <PageHead title="知识文章">
             <template #buttons>
-                <el-button type="primary">新增</el-button>
+                <el-button @click="dialogVisible = true" type="primary">新增</el-button>
                 <el-button type="primary">编辑</el-button>
             </template>
         </PageHead>
@@ -35,7 +35,7 @@
                     <el-button text type="danger">删除</el-button> 
                 </template>    
             </el-table-column>
-        </el-table>、
+        </el-table>
         <el-pagination
             style="margin-top: 25px;align-items:right;"
             :page-size="pagination.size"
@@ -43,6 +43,7 @@
             :total="pagination.total"
             @change="handleChange"
         />
+        <ArticleDialog v-model:modelValue="dialogVisible" :categories="categories" />
     </div>
 </template>
 <script setup>
@@ -50,6 +51,7 @@ import PageHead from '@/components/PageHead.vue'
 import TableSearch from '@/components/TableSearch.vue'
 import { categoryTree, articlePage } from '@/api/admin'
 import { ref, onMounted, reactive } from 'vue'
+import ArticleDialog from '@/components/ArticleDialog.vue'
 
 
 const formItem = [
@@ -83,6 +85,8 @@ const pagination = reactive({
 })
 //表格数据
 const tableData = ref([])
+//弹窗显示
+const dialogVisible = ref(false)
 
 const handleSearch = async(formData) => {
     console.log(formData, '查询参数')
@@ -103,20 +107,22 @@ const handleChange = (page) => {
 //分类映射
 const categoryMap = reactive({})
 //分类列表
-const categoies = ref([])
+const categories = ref([])
 
 onMounted(async () => {
     const data = await categoryTree()
 
-    categoies.value = data.map(item => {
+    categories.value = data.map(item => {
         categoryMap[item.id] = item.categoryName
         return {
             label: item.categoryName,
             value: item.id
         }
     })
-    formItem[1].options = categoies.value
+    console.log(categories.value)
+    formItem[1].options = categories.value
     //获取文章列表
     handleSearch()
+    
 })
 </script>
