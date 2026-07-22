@@ -2,8 +2,7 @@
     <div>
         <PageHead title="知识文章">
             <template #buttons>
-                <el-button @click="dialogVisible = true" type="primary">新增</el-button>
-                <el-button type="primary">编辑</el-button>
+                <el-button @click="handleEdit({})" type="primary">新增</el-button>
             </template>
         </PageHead>
         <TableSearch :formItem="formItem" @search="handleSearch" />
@@ -26,10 +25,10 @@
             </el-table-column>
             <el-table-column prop="authorName" label="作者" width="150" />
             <el-table-column prop="readCount" label="阅读量" width="150" />
-            <el-table-column prop="publishedAt" label="发布时间" width="150"/>
+            <el-table-column prop="updatedAt" label="发布时间" width="150"/>
             <el-table-column label="操作" width="300" fixed="right">
                 <template #default="scope">
-                    <el-button text type="primary">编辑</el-button>
+                    <el-button text type="primary" @click="handleEdit(scope.row)" >编辑</el-button>
                     <el-button v-if="scope.row.status === 0||scope.row.status === 2" text type="success">发布</el-button>
                     <el-button v-if="scope.row.status === 1" text type="warning">下线</el-button>
                     <el-button text type="danger">删除</el-button> 
@@ -43,13 +42,13 @@
             :total="pagination.total"
             @change="handleChange"
         />
-        <ArticleDialog v-model:modelValue="dialogVisible" :categories="categories" />
+        <ArticleDialog v-model:modelValue="dialogVisible" :article="currentArticle" :categories="categories" @success="handleSuccess" />
     </div>
 </template>
 <script setup>
 import PageHead from '@/components/PageHead.vue'
 import TableSearch from '@/components/TableSearch.vue'
-import { categoryTree, articlePage } from '@/api/admin'
+import { categoryTree, articlePage, getArticleDetail } from '@/api/admin'
 import { ref, onMounted, reactive } from 'vue'
 import ArticleDialog from '@/components/ArticleDialog.vue'
 
@@ -108,6 +107,26 @@ const handleChange = (page) => {
 const categoryMap = reactive({})
 //分类列表
 const categories = ref([])
+
+//新增文章成功回调
+const handleSuccess = () => {}
+//编辑文章成功回调
+const currentArticle = ref(null)
+const handleEdit = (row) => {
+    if(!row.id){
+        //新增
+        currentArticle.value = null
+        dialogVisible.value = true 
+    }
+    else{
+        //编辑
+        getArticleDetail(row.id).then(res=>{
+        console.log(res,'编辑详情');
+        currentArticle.value = res
+        dialogVisible.value = true 
+        })
+    }
+}
 
 onMounted(async () => {
     const data = await categoryTree()

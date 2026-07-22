@@ -1,6 +1,6 @@
 <template>
   <el-dialog
-    title="文章详情"
+    :title="isEdit ? '编辑文章' : '创建文章'"
     v-model="dialogVisible"
     width="50%"
     @close="handleClose"
@@ -48,17 +48,47 @@
       </div>
       </div>
     </el-form-item>
+    <el-form-item label="文章内容" prop="content">
+      <RichTextEditor 
+      v-model="formData.content"
+      placeholder="请输入文章内容,支持富文本格式\n\n可以使用加粗、斜体、下划线、列表、标题等格式来丰富文章内容。"
+      :maxCharCount="5000"
+      min-height="400px"
+      @change="handleContentChange"
+      @created="handleEditorCreated" />
+    </el-form-item>
   </el-form>
+  <div v-show="btnPreview">
+    <h3>内容预览</h3>
+    <div v-html="formData.content" style="border: 1px solid #ccc; padding: 10px; margin-top: 10px;"></div>
+  </div>
+  <template #footer>
+    <el-button @click="btnPreview = !btnPreview">{{ btnPreview ? '隐藏效果' : '预览效果' }}</el-button>
+    <el-button type="primary" @click="handleSubmit" :loading="loading">创建文章</el-button>
+    <el-button type="primary" @click="handleClose">取消</el-button>
+  </template>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref,reactive, computed } from 'vue'
+import { ref,reactive, computed, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { uploadFile } from '@/api/admin'
+import { uploadFile,createArticle } from '@/api/admin'
 import { filebaseUrl } from '@/config/index.js'
+import RichTextEditor from '@/components/RichTextEditor.vue'
+//定义事件
+const emit = defineEmits(['update:modelValue', 'success'])
 
-const emit = defineEmits(['update:modelValue'])
+const dialogVisible = computed({
+    get: () => props.modelValue,
+    set: (val) => {
+        emit('update:modelValue', val)
+    }
+})
+//判断是否为编辑模式
+const isEdit= computed(()=>!!props.article?.id)
+
+const handleClose = () => {} 
 
 const props = defineProps({
     modelValue: {
@@ -68,16 +98,15 @@ const props = defineProps({
     categories: {
        type: Array,
       default: ()=>[]
+    },
+    article: {
+        type: Object,
+        default: null
     }
 
 })
-const dialogVisible = computed({
-    get: () => props.modelValue,
-    set: (val) => {
-        emit('update:modelValue', val)
-    }
-})
-const handleClose = () => {}  
+
+ 
 
 const formData = reactive({
     "title": "",
@@ -90,13 +119,15 @@ const formData = reactive({
 })
 const rules = reactive({
     title: [
-        { required: true, message: '请输入文章标题', trigger: 'blur' }
+        { required: true, message: '请输入文章标题', trigger: 'blur' },
+        { max: 200, message: '标题长度不能超过200个字符', trigger: 'blur' }
     ],
     categoryId: [
         { required: true, message: '请选择分类', trigger: 'change' }
     ],
-    tags: [
-        { required: true, message: '请输入文章标签', trigger: 'blur' }
+    content: [
+        { required: true, message: '请输入文章内容', trigger: 'blur' },
+        { max: 5000, message: '文章内容长度不能超过5000个字符', trigger: 'blur' }
     ]
 })
 const commonTags = [ "情绪管理", "焦虑", "抑郁", "压力", "人际关系", "自我成长", "工作压力睡眠", "心理疾病", "心理治疗", "心理咨询" , "工作压力", "学习方法", "生活技巧"]
@@ -122,7 +153,7 @@ const beforeUpload = (file)=>{
 const handleUploadRequest=async({file})=>
 {
   //生成uuid
-  const businessId=crypto.randomUUID
+  const businessId = crypto.randomUUID()
 
   const fileRes=await uploadFile(file,{
     businessId:businessId
@@ -137,6 +168,42 @@ const handleRemove=()=>{
   urlImg.value=''
   formData.coverImage=''
 }
+//监听富文本内容变化
+const handleContentChange=(data)=>{
+  formData.content=data.html
+}
+//定义一初始值
+const editorInstance = ref(null)
+const handleEditorCreated=(editor)=>{
+  editorInstance.value = editor
+  //编辑
+  if(formData.content && editor){
+    nextTick(()=>{
+      editor.setHtml(formData.content)
+    })
+  }
+}
+const btnPreview = ref(false)
+
+//提交文章
+const formRef = ref()
+const loading = ref(false)
+const handleSubmit = () => {
+  formRef.value.validate(async (valid, fields) => {
+    if (!valid) return
+    loading.value = true
+    console.log('提交的表单信息',formData)
+    const submitData = {
+      ...formData,
+      tags: formData.tagArray.join(',')
+    }
+    delete submitData.tagArray
+    createArticle(submitData).then(res=>{
+      emit('success')
+      loading.value = false
+    })
+  })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -146,7 +213,6 @@ const handleRemove=()=>{
   align-items: flex-start;
   gap: 8px;
 }
-
 .cover-placeholder{
   width: 200px;
   height: 120px;
