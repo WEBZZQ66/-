@@ -71,25 +71,12 @@
 </template>
 
 <script setup>
-import { ref,reactive, computed, nextTick } from 'vue'
+import { ref,reactive, computed, nextTick,watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { uploadFile,createArticle } from '@/api/admin'
-import { filebaseUrl } from '@/config/index.js'
+import { filebaseUrl } from '@/config/index'
 import RichTextEditor from '@/components/RichTextEditor.vue'
-//定义事件
-const emit = defineEmits(['update:modelValue', 'success'])
-
-const dialogVisible = computed({
-    get: () => props.modelValue,
-    set: (val) => {
-        emit('update:modelValue', val)
-    }
-})
-//判断是否为编辑模式
-const isEdit= computed(()=>!!props.article?.id)
-
-const handleClose = () => {} 
-
+// 先定义 props 和 emit（必须在使用它们的代码之前）
 const props = defineProps({
     modelValue: {
         type: Boolean,
@@ -103,8 +90,43 @@ const props = defineProps({
         type: Object,
         default: null
     }
-
 })
+
+const emit = defineEmits(['update:modelValue', 'success'])
+
+const dialogVisible = computed({
+    get: () => props.modelValue,
+    set: (val) => {
+        emit('update:modelValue', val)
+    }
+})
+//判断是否为编辑模式
+const isEdit= computed(()=>!!props.article?.id)
+
+//监听编辑数据
+watch(()=>props.article,(newVal)=>{
+  if(newVal){
+    Object.assign(formData,newVal) //将编辑数据赋值给formData
+    //使用现有ID
+    businessId.value = newVal.id
+    //封面urlImg
+    urlImg.value =filebaseUrl + newVal.coverImage
+  }
+})
+
+const handleClose = () => {
+  //重置表单数据
+  formRef.value.resetFields()
+  //重置Id
+  businessId.value = null
+  //重置标签
+  formData.tagArray = []
+  //重置封面和数据
+  handleRemove()
+  
+  //关闭弹窗  
+  emit('update:modelValue', false)
+}
 
  
 
@@ -150,13 +172,14 @@ const beforeUpload = (file)=>{
   return true
 }
 //上传封面接口联调
+const businessId = ref('') //封面图片的业务ID
 const handleUploadRequest=async({file})=>
 {
   //生成uuid
-  const businessId = crypto.randomUUID()
+  businessId.value = crypto.randomUUID()
 
   const fileRes=await uploadFile(file,{
-    businessId:businessId
+    businessId:businessId.value
   })
   console.log(fileRes)
   //拼接图片文件地址

@@ -23,9 +23,11 @@ export function uploadFile(file, businessInfo) {
     }
   })
 }
+//创建文章
 export function createArticle(data) {
   return service.post('/knowledge/article', data)
 }
+//获取文章详情
 export function getArticleDetail(id) {
   return service.get(`/knowledge/article/${id}`)
 }
