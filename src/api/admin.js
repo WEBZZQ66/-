@@ -27,7 +27,19 @@ export function uploadFile(file, businessInfo) {
 export function createArticle(data) {
   return service.post('/knowledge/article', data)
 }
+//更新文章
+export function updateArticle(id, data) {
+  return service.put(`/knowledge/article/${id}`, data)
+}
+//发布/下线文章（status: 1 已发布，2 已下线）
+export function updateArticleStatus(id, status) {
+  return service.put(`/knowledge/article/${id}/status`, { status })
+}
 //获取文章详情
 export function getArticleDetail(id) {
   return service.get(`/knowledge/article/${id}`)
+}
+//删除文章
+export function deleteArticle(id) {
+  return service.delete(`/knowledge/article/${id}`)
 }

@@ -64,7 +64,7 @@
   </div>
   <template #footer>
     <el-button @click="btnPreview = !btnPreview">{{ btnPreview ? '隐藏效果' : '预览效果' }}</el-button>
-    <el-button type="primary" @click="handleSubmit" :loading="loading">创建文章</el-button>
+    <el-button type="primary" @click="handleSubmit" :loading="loading">{{ isEdit ? '更新文章' : '创建文章' }}</el-button>
     <el-button type="primary" @click="handleClose">取消</el-button>
   </template>
   </el-dialog>
@@ -73,7 +73,7 @@
 <script setup>
 import { ref,reactive, computed, nextTick,watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { uploadFile,createArticle } from '@/api/admin'
+import { uploadFile,createArticle,updateArticle } from '@/api/admin'
 import { filebaseUrl } from '@/config/index'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 // 先定义 props 和 emit（必须在使用它们的代码之前）
@@ -107,6 +107,8 @@ const isEdit= computed(()=>!!props.article?.id)
 watch(()=>props.article,(newVal)=>{
   if(newVal){
     Object.assign(formData,newVal) //将编辑数据赋值给formData
+    //标签是逗号分隔的字符串，需要转成数组给 el-select 使用
+    formData.tagArray = newVal.tags ? String(newVal.tags).split(',').filter(Boolean) : []
     //使用现有ID
     businessId.value = newVal.id
     //封面urlImg
@@ -121,6 +123,8 @@ const handleClose = () => {
   businessId.value = null
   //重置标签
   formData.tagArray = []
+  //重置文章ID，避免新增时带上上一次编辑的ID
+  formData.id = ''
   //重置封面和数据
   handleRemove()
   
@@ -215,16 +219,27 @@ const handleSubmit = () => {
   formRef.value.validate(async (valid, fields) => {
     if (!valid) return
     loading.value = true
-    console.log('提交的表单信息',formData)
     const submitData = {
       ...formData,
       tags: formData.tagArray.join(',')
     }
     delete submitData.tagArray
-    createArticle(submitData).then(res=>{
+    try {
+      if (isEdit.value) {
+        // 编辑：调用更新接口，id 同时放在路径和请求体中
+        await updateArticle(formData.id, submitData)
+        ElMessage.success('更新成功')
+      } else {
+        await createArticle(submitData)
+        ElMessage.success('创建成功')
+      }
       emit('success')
+      handleClose()
+    } catch {
+      // 失败提示已由 request.js 的响应拦截器统一弹出
+    } finally {
       loading.value = false
-    })
+    }
   })
 }
 </script>

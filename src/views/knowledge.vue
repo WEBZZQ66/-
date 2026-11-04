@@ -29,9 +29,9 @@
             <el-table-column label="操作" width="300" fixed="right">
                 <template #default="scope">
                     <el-button text type="primary" @click="handleEdit(scope.row)" >编辑</el-button>
-                    <el-button v-if="scope.row.status === 0||scope.row.status === 2" text type="success">发布</el-button>
-                    <el-button v-if="scope.row.status === 1" text type="warning">下线</el-button>
-                    <el-button text type="danger">删除</el-button> 
+                    <el-button v-if="scope.row.status === 0||scope.row.status === 2" text type="success" @click="handleStatusChange(scope.row, 1)">发布</el-button>
+                    <el-button v-if="scope.row.status === 1" text type="warning" @click="handleStatusChange(scope.row, 2)">下线</el-button>
+                    <el-button text type="danger" @click="handleDelete(scope.row)">删除</el-button>
                 </template>    
             </el-table-column>
         </el-table>
@@ -48,8 +48,9 @@
 <script setup>
 import PageHead from '@/components/PageHead.vue'
 import TableSearch from '@/components/TableSearch.vue'
-import { categoryTree, articlePage, getArticleDetail } from '@/api/admin'
+import { categoryTree, articlePage, getArticleDetail, deleteArticle, updateArticleStatus } from '@/api/admin'
 import { ref, onMounted, reactive } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import ArticleDialog from '@/components/ArticleDialog.vue'
 
 
@@ -108,8 +109,10 @@ const categoryMap = reactive({})
 //分类列表
 const categories = ref([])
 
-//新增文章成功回调
-const handleSuccess = () => {}
+//新增/编辑文章成功回调
+const handleSuccess = () => {
+    handleSearch()
+}
 //编辑文章成功回调
 const currentArticle = ref(null)
 const handleEdit = (row) => {
@@ -125,6 +128,65 @@ const handleEdit = (row) => {
         currentArticle.value = res
         dialogVisible.value = true 
         })
+    }
+}
+
+//发布/下线文章（status: 1 发布，2 下线）
+const handleStatusChange = async (row, status) => {
+    const isPublish = status === 1
+    try {
+        await ElMessageBox.confirm(
+            isPublish
+                ? `确定发布文章「${row.title}」吗？发布后所有用户可见。`
+                : `确定下线文章「${row.title}」吗？下线后用户将无法查看。`,
+            isPublish ? '发布确认' : '下线确认',
+            {
+                type: isPublish ? 'info' : 'warning',
+                confirmButtonText: isPublish ? '发布' : '下线',
+                cancelButtonText: '取消',
+                ...(isPublish ? {} : { confirmButtonClass: 'el-button--danger' })
+            }
+        )
+    } catch {
+        return // 点了取消或关闭弹窗
+    }
+
+    try {
+        await updateArticleStatus(row.id, status)
+        ElMessage.success(isPublish ? '发布成功' : '下线成功')
+        handleSearch()
+    } catch {
+        // 失败提示已由 request.js 的响应拦截器统一弹出
+    }
+}
+
+//删除文章
+const handleDelete = async (row) => {
+    try {
+        await ElMessageBox.confirm(
+            `确定删除文章「${row.title}」吗？删除后不可恢复。`,
+            '删除确认',
+            {
+                type: 'warning',
+                confirmButtonText: '删除',
+                cancelButtonText: '取消',
+                confirmButtonClass: 'el-button--danger'
+            }
+        )
+    } catch {
+        return // 点了取消或关闭弹窗
+    }
+
+    try {
+        await deleteArticle(row.id)
+        ElMessage.success('删除成功')
+        // 当前页只剩这一条时回退一页，避免停在空页
+        if (tableData.value.length === 1 && pagination.currentPage > 1) {
+            pagination.currentPage--
+        }
+        handleSearch()
+    } catch {
+        // 失败提示已由 request.js 的响应拦截器统一弹出
     }
 }
 
