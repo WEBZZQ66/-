@@ -4,6 +4,10 @@ import AuthLayout from '@/components/AuthLayout.vue'
 //配置路由
 const backendRoutes = [
     {
+        path: '/',
+        redirect: '/auth/login'
+    },
+    {
         path: '/back',
         component: BackendLayout,
         redirect: '/back/dashboard',
@@ -63,6 +67,11 @@ const backendRoutes = [
                 }
             }
         ]
+    },
+    // 未匹配到的路径统一回到登录页，避免白屏
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: '/auth/login'
     }
 ]
 const router = createRouter({

@@ -13,7 +13,7 @@
                     </div>
                 </div>
                 <el-menu-item class="menu-item"
-                    v-for="(item, index) in router.options.routes[0].children.filter(child => child.path !== '')"
+                    v-for="item in menuRoutes"
                     :key="item.path" :index="item.path">
                     <el-icon>
                         <component :is="item.meta.icon" />
@@ -35,7 +35,12 @@ import { computed } from 'vue'
 const isCollapse = computed(() => useAdminStore().iscollapse)
 
 const router = useRouter()// 获取路由实例
-console.log(router, 'routers')// 处理菜单选择事件
+
+// 取后台布局下的子路由作为菜单项（按 path 查找，避免依赖数组下标）
+const menuRoutes = computed(() =>
+    router.options.routes.find(route => route.path === '/back')?.children ?? []
+)
+// 处理菜单选择事件
 const handleSelect = (index) => {// index 是被选中菜单项的路径
     console.log(index)
     router.push(index)
