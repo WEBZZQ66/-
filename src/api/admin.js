@@ -39,6 +39,14 @@ export function updateArticleStatus(id, status) {
 export function getArticleDetail(id) {
   return service.get(`/knowledge/article/${id}`)
 }
+//分页查询咨询会话
+export function sessionPage(params) {
+  return service.get('/psychological-chat/sessions', { params })
+}
+//获取会话消息列表
+export function sessionMessages(sessionId) {
+  return service.get(`/psychological-chat/sessions/${sessionId}/messages`)
+}
 //删除文章
 export function deleteArticle(id) {
   return service.delete(`/knowledge/article/${id}`)
