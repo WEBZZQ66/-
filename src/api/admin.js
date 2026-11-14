@@ -47,6 +47,10 @@ export function sessionPage(params) {
 export function sessionMessages(sessionId) {
   return service.get(`/psychological-chat/sessions/${sessionId}/messages`)
 }
+//获取综合数据分析
+export function analyticsOverview() {
+  return service.get('/data-analytics/overview')
+}
 //分页查询情绪日记
 export function emotionDiaryPage(params) {
   return service.get('/emotion-diary/admin/page', { params })
