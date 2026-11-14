@@ -47,6 +47,14 @@ export function sessionPage(params) {
 export function sessionMessages(sessionId) {
   return service.get(`/psychological-chat/sessions/${sessionId}/messages`)
 }
+//分页查询情绪日记
+export function emotionDiaryPage(params) {
+  return service.get('/emotion-diary/admin/page', { params })
+}
+//删除情绪日记
+export function deleteEmotionDiary(id) {
+  return service.delete(`/emotion-diary/admin/${id}`)
+}
 //删除文章
 export function deleteArticle(id) {
   return service.delete(`/knowledge/article/${id}`)

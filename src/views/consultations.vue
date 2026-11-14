@@ -50,29 +50,49 @@
             </div>
 
             <!-- 消息列表 -->
-            <div ref="messageListRef" class="message-list" v-loading="messageLoading">
-                <TransitionGroup name="msg">
-                    <div
-                        v-for="(msg, index) in messages"
-                        :key="msg.id ?? index"
-                        class="message-row"
-                        :class="isUserMessage(msg) ? 'is-user' : 'is-assistant'"
-                        :style="{ transitionDelay: `${Math.min(index, 8) * 40}ms` }"
-                    >
-                        <el-avatar :size="28" class="msg-avatar">
-                            {{ isUserMessage(msg) ? '用' : 'AI' }}
-                        </el-avatar>
-                        <div class="msg-body">
-                            <div class="msg-bubble">{{ messageContent(msg) || '-' }}</div>
-                            <div class="msg-time">{{ formatTime(messageTime(msg)) }}</div>
-                        </div>
+            <div ref="messageListRef" class="message-list">
+                <Transition name="fade" mode="out-in">
+                    <!-- 加载态：气泡形状的骨架屏 -->
+                    <el-skeleton v-if="messageLoading" key="loading" animated class="message-skeleton">
+                        <template #template>
+                            <div
+                                v-for="i in 4"
+                                :key="i"
+                                class="skeleton-row"
+                                :class="i % 2 === 0 ? 'is-user' : 'is-assistant'"
+                            >
+                                <el-skeleton-item variant="circle" class="skeleton-avatar" />
+                                <el-skeleton-item
+                                    variant="p"
+                                    class="skeleton-bubble"
+                                    :style="{ width: i % 2 === 0 ? '42%' : '62%' }"
+                                />
+                            </div>
+                        </template>
+                    </el-skeleton>
+
+                    <!-- 消息内容 -->
+                    <div v-else key="content" class="message-content">
+                        <TransitionGroup name="msg">
+                            <div
+                                v-for="(msg, index) in messages"
+                                :key="msg.id ?? index"
+                                class="message-row"
+                                :class="isUserMessage(msg) ? 'is-user' : 'is-assistant'"
+                                :style="{ transitionDelay: `${Math.min(index, 8) * 40}ms` }"
+                            >
+                                <el-avatar :size="28" class="msg-avatar">
+                                    {{ isUserMessage(msg) ? '用' : 'AI' }}
+                                </el-avatar>
+                                <div class="msg-body">
+                                    <div class="msg-bubble">{{ messageContent(msg) || '-' }}</div>
+                                    <div class="msg-time">{{ formatTime(messageTime(msg)) }}</div>
+                                </div>
+                            </div>
+                        </TransitionGroup>
+                        <el-empty v-if="!messages.length" description="暂无消息记录" :image-size="70" />
                     </div>
-                </TransitionGroup>
-                <el-empty
-                    v-if="!messageLoading && !messages.length"
-                    description="暂无消息记录"
-                    :image-size="70"
-                />
+                </Transition>
             </div>
 
             <template #footer>
@@ -83,7 +103,6 @@
 </template>
 <script setup>
 import PageHead from '@/components/PageHead.vue'
-import TableSearch from '@/components/TableSearch.vue'
 import { sessionPage, sessionMessages } from '@/api/admin'
 import { ref, reactive, onMounted, nextTick } from 'vue'
 
@@ -96,8 +115,6 @@ const pagination = reactive({
 //表格数据
 const tableData = ref([])
 const loading = ref(false)
-//保存查询条件，翻页时沿用
-const searchParams = ref({})
 
 const formatTime = (val) => {
     if (val === undefined || val === null || val === '' || val === '-') return '-'
@@ -115,8 +132,8 @@ const fetchList = async () => {
         const params = {
             currentPage: pagination.currentPage,
             size: pagination.size,
-            //后端要求 emotionTag 必传，未选择时传空字符串
-            emotionTag: searchParams.value.emotionTag || ''
+            //后端要求 emotionTag 必传，页面没有筛选项时传空字符串
+            emotionTag: ''
         }
         const data = await sessionPage(params)
         tableData.value = data?.records ?? []
@@ -128,13 +145,6 @@ const fetchList = async () => {
     } finally {
         loading.value = false
     }
-}
-
-//查询：条件变化时回到第一页
-const handleSearch = (formData = {}) => {
-    searchParams.value = { ...formData }
-    pagination.currentPage = 1
-    fetchList()
 }
 
 const handlePageChange = (page) => {
@@ -284,6 +294,44 @@ onMounted(() => {
         background: #d7dde5;
         border-radius: 3px;
     }
+}
+
+/* 加载态骨架屏 */
+.message-skeleton {
+    padding: 4px 2px;
+}
+
+.skeleton-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+
+    &.is-user {
+        flex-direction: row-reverse;
+    }
+}
+
+.skeleton-avatar {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.skeleton-bubble {
+    height: 44px;
+    border-radius: 12px;
+}
+
+/* 加载态与消息内容之间的淡入淡出 */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 
 .message-row {
