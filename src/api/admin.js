@@ -3,6 +3,10 @@ import service from '@/utils/request'
 export function login(data) {
   return service.post('/user/login', data)
 }
+//退出登录
+export function logout() {
+  return service.post('/user/logout')
+}
 //获取分类
 export function categoryTree() {
   return service.get('/knowledge/category/tree') //由于后端接口没有参数所以不需要传参

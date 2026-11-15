@@ -34,10 +34,12 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { login } from '@/api/admin'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const ruleFormRef = ref()
 const router = useRouter()
+const route = useRoute()
 
 const formData = reactive({
   username: '',
@@ -58,16 +60,25 @@ const submitForm = async (formEl) => {
     if (valid) {
       login(formData).then(data => {
         //判断token是否存在
-        if (!data.token) {
+        if (!data?.token) {
           return console.log('登录失败')
         }
         //登录成功，保存token和用户信息
         localStorage.setItem('token', data.token)
         localStorage.setItem('userInfo', JSON.stringify(data.userInfo))
-        //根据用户角色决定跳转路径
-        if (data.userInfo.userType === 2) {
-          router.push('/back/dashboard')
+        //普通用户（userType: 1）没有管理端权限，清掉凭据并提示
+        if (Number(data.userInfo?.userType) !== 2) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
+          ElMessage.error('该账号没有管理端权限')
+          return
         }
+        //管理员才进后台，优先回到被守卫拦下的页面
+        const rawRedirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+        const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+          ? rawRedirect
+          : '/back/dashboard'
+        router.push(redirect)
       })
       // 处理登录逻辑
     } else {
