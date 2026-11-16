@@ -54,7 +54,7 @@ const handleDiary = () => {
     position: relative;
     overflow: hidden;
     /* 与登录页左栏同一套紫色渐变 */
-    background: linear-gradient(90deg, #55268e 0%, #401a6e 50%, #2a0e4e 100%);
+    background: linear-gradient(90deg, var(--brand-700) 0%, #401a6e 50%, #2a0e4e 100%);
 
     /* 效果图上那层很淡的斜纹 */
     &::before {
@@ -126,7 +126,7 @@ const handleDiary = () => {
     }
 
     .btn-solid {
-        background: #fff;
+        background: var(--bg-card);
         border-color: #fff;
         color: #2f4f45;
         font-weight: 600;

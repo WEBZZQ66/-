@@ -26,6 +26,17 @@ export function saveEmotionDiary(data) {
   return service.post('/emotion-diary', data)
 }
 
+//查询知识文章列表（推荐阅读：按阅读量倒序）
+export function knowledgeArticlePage(params) {
+  return service.get('/knowledge/article/page', { params, skipAuthRedirect: true })
+}
+
+//获取知识文章详情
+export function knowledgeArticleDetail(id) {
+  return service.get(`/knowledge/article/${id}`, { skipAuthRedirect: true })
+}
+
+
 //获取会话情绪分析结果
 //情绪分析是辅助信息，失败不提示、不跳登录页，页面自己降级成「暂无」
 export function sessionEmotion(sessionId) {

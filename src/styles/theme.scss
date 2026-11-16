@@ -1,0 +1,127 @@
+/* ============================================================
+   设计令牌：颜色 / 圆角 / 阴影 / 动效
+   页面统一使用 var(--xxx)，暗色模式只需覆盖这里的值
+   ============================================================ */
+:root {
+    /* 品牌紫 */
+    --brand-50: #f8f4fd;
+    --brand-100: #f1e9fb;
+    --brand-200: #e3d5f6;
+    --brand-300: #c9aee8;
+    --brand-500: #7b4cb4;
+    --brand-600: #6b3fa0;
+    --brand-700: #55268e;
+    /* 铺在品牌色/渐变之上的文字颜色 */
+    --on-brand: #ffffff;
+
+    /* 中性色 */
+    --bg-page: #f6f5f9;
+    --bg-card: #ffffff;
+    --bg-subtle: #f8f7fb;
+    --bg-header: #f5f5f5;
+    --bg-footer: #26262e;
+    --text-1: #1f2937;
+    --text-2: #6b7280;
+    --text-3: #8b8f99;
+    --border: #ece9f2;
+    --border-strong: #dcd8e6;
+
+    /* 牛皮纸（情绪日记） */
+    --paper-bg: #f4e8d0;
+    --paper-border: #e3d3b4;
+    --paper-line: rgba(150, 116, 68, 0.05);
+    --paper-line-2: rgba(150, 116, 68, 0.04);
+    --paper-dot: rgba(126, 96, 54, 0.07);
+    --paper-gloss: rgba(255, 255, 255, 0.55);
+    --paper-input: #fffdf7;
+    --paper-input-border: #e6d9c0;
+    --paper-label: #6b543a;
+    --paper-inset: rgba(150, 110, 60, 0.07);
+
+    /* 圆角 / 阴影 / 动效 */
+    --radius-xl: 16px;
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
+    --shadow-card: 0 2px 12px rgba(60, 40, 100, 0.06);
+    --shadow-hover: 0 8px 22px rgba(60, 40, 100, 0.12);
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-fast: 0.18s;
+    --dur-normal: 0.24s;
+
+    /* Element 主色：管理端与用户端统一成品牌紫 */
+    --el-color-primary: #6b3fa0;
+    --el-color-primary-light-3: #9672bd;
+    --el-color-primary-light-5: #b59fd0;
+    --el-color-primary-light-7: #d3c5e3;
+    --el-color-primary-light-8: #e1d9ec;
+    --el-color-primary-light-9: #f0ecf6;
+    --el-color-primary-dark-2: #563280;
+}
+
+/* ---------- 暗色模式 ---------- */
+html.dark {
+    --brand-50: #211a2d;
+    --brand-100: #2a2139;
+    --brand-200: #3a2f52;
+    --brand-300: #6b5490;
+    --brand-500: #a887d8;
+    --brand-600: #bda2ea;
+    --brand-700: #d3bcf7;
+    --on-brand: #17141f;
+
+    --bg-page: #14121a;
+    --bg-card: #1e1b26;
+    --bg-subtle: #262231;
+    --bg-header: #1a1721;
+    --bg-footer: #100e14;
+    --text-1: #e9e7ef;
+    --text-2: #a8a3b6;
+    --text-3: #8a8598;
+    --border: #2f2a3c;
+    --border-strong: #3d3750;
+
+    --paper-bg: #262017;
+    --paper-border: #3a3226;
+    --paper-line: rgba(255, 255, 255, 0.03);
+    --paper-line-2: rgba(255, 255, 255, 0.02);
+    --paper-dot: rgba(255, 255, 255, 0.035);
+    --paper-gloss: rgba(255, 255, 255, 0.03);
+    --paper-input: #201b14;
+    --paper-input-border: #3d3428;
+    --paper-label: #c8b393;
+    --paper-inset: rgba(0, 0, 0, 0.3);
+
+    --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 8px 22px rgba(0, 0, 0, 0.5);
+
+    /* 暗色下 Element 的 light-* 是"更深"的层级 */
+    --el-color-primary: #a887d8;
+    --el-color-primary-light-3: #8369ab;
+    --el-color-primary-light-5: #614c80;
+    --el-color-primary-light-7: #45375c;
+    --el-color-primary-light-8: #382c4a;
+    --el-color-primary-light-9: #2a2138;
+    --el-color-primary-dark-2: #bda2ea;
+}
+
+/* ---------- 基础 ---------- */
+html,
+body {
+    background-color: var(--bg-page);
+    color: var(--text-1);
+    transition: background-color var(--dur-normal) ease, color var(--dur-normal) ease;
+}
+
+/* 统一键盘焦点环，鼠标点击不显示 */
+:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 2px;
+}
+
+/* 主题切换时避免大面积过渡闪烁 */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+    transition: none !important;
+}

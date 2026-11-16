@@ -1,17 +1,11 @@
 <template>
     <div class="diary-page">
-        <!-- 通栏标题板块：让用户一眼知道自己在情绪日记功能里 -->
-        <header class="diary-banner">
-            <div class="banner-inner">
-                <div class="banner-icon">
-                    <el-icon><Notebook /></el-icon>
-                </div>
-                <div class="banner-text">
-                    <h2>情绪日记</h2>
-                    <p>记录今天的心情，让情绪有迹可循</p>
-                </div>
-            </div>
-        </header>
+        <FrontBanner
+            variant="warm"
+            icon="Notebook"
+            title="情绪日记"
+            subtitle="记录今天的心情，让情绪有迹可循"
+        />
 
         <div ref="cardRef" class="diary-card" :class="{ 'is-entering': entering }">
             <el-form ref="formRef" :model="form" :rules="rules" label-position="top" class="diary-form">
@@ -145,6 +139,8 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { saveEmotionDiary } from '@/api/user'
+import { saveTodayMood } from '@/utils/todayMood'
+import FrontBanner from '@/components/FrontBanner.vue'
 
 import iconHappy from '@/assets/images/开心.png'
 import iconExcited from '@/assets/images/兴奋.png'
@@ -277,6 +273,12 @@ const submit = async () => {
             stressLevel: form.stressLevel
         })
         ElMessage.success('情绪日记已保存')
+        //记到本地，聊天页的情绪花园会直接显示今天的状态
+        saveTodayMood({
+            diaryDate: form.diaryDate,
+            moodScore: form.moodScore,
+            dominantEmotion: form.dominantEmotion
+        })
         //保存成功后清空表单并重播一次展开动画
         resetForm()
     } catch {
@@ -288,66 +290,12 @@ const submit = async () => {
 </script>
 
 <style lang="scss" scoped>
-$brand: #55268e;
-$brand-light: #7b4cb4;
-$border: #ece9f2;
-$text: #1f2937;
-$sub: #6b7280;
-
 .diary-page {
     flex: 1;
     padding: 24px;
     /* 整体偏暖，比卡片更浅一档，让牛皮纸板块跳出来 */
-    background: #f9f7f2;
+    background: var(--bg-page);
     box-sizing: border-box;
-}
-
-/* ---------- 通栏标题板块 ---------- */
-.diary-banner {
-    /* 抵消页面内边距，让板块贴到两侧边缘 */
-    margin: -24px -24px 22px;
-    padding: 26px 24px;
-    background: linear-gradient(135deg, #faf6ec 0%, #fdfaf3 55%, #f7f2e6 100%);
-    border-bottom: 1px solid #e8dfc9;
-}
-
-.banner-inner {
-    max-width: 820px;
-    margin: 0 auto;
-    /* 与卡片内边距对齐，标题和下面的表单项左边缘一致 */
-    padding: 0 36px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.banner-icon {
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    background: #fff;
-    color: $brand-light;
-    font-size: 22px;
-    box-shadow: 0 2px 8px rgba(85, 38, 142, 0.08);
-}
-
-.banner-text {
-    h2 {
-        font-size: 22px;
-        font-weight: 600;
-        color: $text;
-        letter-spacing: 0.5px;
-    }
-
-    p {
-        margin-top: 5px;
-        font-size: 13px;
-        color: $sub;
-    }
 }
 
 .diary-card {
@@ -355,19 +303,19 @@ $sub: #6b7280;
     margin: 0 auto;
     padding: 28px 36px;
     border-radius: 16px;
-    border: 1px solid #e3d3b4;
+    border: 1px solid var(--paper-border);
 
     /* 仿牛皮纸：底色 + 两层纤维纹 + 细小斑点 + 顶部提亮 */
-    background-color: #f4e8d0;
+    background-color: var(--paper-bg);
     background-image:
-        repeating-linear-gradient(112deg, rgba(150, 116, 68, 0.05) 0 1px, transparent 1px 7px),
-        repeating-linear-gradient(24deg, rgba(150, 116, 68, 0.04) 0 1px, transparent 1px 9px),
-        radial-gradient(rgba(126, 96, 54, 0.07) 1px, transparent 1px),
-        radial-gradient(120% 100% at 50% 0%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 62%);
+        repeating-linear-gradient(112deg, var(--paper-line) 0 1px, transparent 1px 7px),
+        repeating-linear-gradient(24deg, var(--paper-line-2) 0 1px, transparent 1px 9px),
+        radial-gradient(var(--paper-dot) 1px, transparent 1px),
+        radial-gradient(120% 100% at 50% 0%, var(--paper-gloss) 0%, rgba(255, 255, 255, 0) 62%);
     background-size: auto, auto, 18px 18px, auto;
     box-shadow:
         0 3px 18px rgba(120, 90, 50, 0.1),
-        inset 0 0 46px rgba(150, 110, 60, 0.07);
+        inset 0 0 46px var(--paper-inset);
 
 }
 
@@ -406,7 +354,7 @@ $sub: #6b7280;
     :deep(.el-form-item__label) {
         font-size: 13px;
         font-weight: 500;
-        color: #6b543a;
+        color: var(--paper-label);
         padding-bottom: 6px;
     }
 
@@ -427,8 +375,8 @@ $sub: #6b7280;
         border-radius: 10px;
         font-size: 14px;
         /* 纸面上用微暖的白色，比纯白柔和 */
-        background-color: #fffdf7;
-        box-shadow: 0 0 0 1px #e6d9c0 inset;
+        background-color: var(--paper-input);
+        box-shadow: 0 0 0 1px var(--paper-input-border) inset;
     }
 
     :deep(.el-textarea__inner) {
@@ -455,7 +403,7 @@ $sub: #6b7280;
 
     .mood-text {
         font-size: 13px;
-        color: $brand;
+        color: var(--brand-700);
         font-weight: 500;
     }
 }
@@ -468,22 +416,22 @@ $sub: #6b7280;
         width: 34px;
         height: 34px;
         border-radius: 50%;
-        border: 1px solid #e6d9c0;
+        border: 1px solid var(--paper-input-border);
         background: #fffdf7;
-        color: #8a7355;
+        color: var(--paper-label);
         font-size: 13px;
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
-            border-color: #c9aee8;
-            color: $brand;
+            border-color: var(--brand-300);
+            color: var(--brand-700);
         }
 
         &.on {
-            background: linear-gradient(135deg, $brand-light, $brand);
+            background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
             border-color: transparent;
-            color: #fff;
+            color: var(--on-brand);
             font-weight: 600;
             transform: scale(1.04);
         }
@@ -496,7 +444,7 @@ $sub: #6b7280;
     max-width: 412px;
     margin-top: 8px;
     font-size: 12px;
-    color: #a2907a;
+    color: var(--paper-label);
 }
 
 /* ---------- 情绪选择 ---------- */
@@ -527,7 +475,7 @@ $sub: #6b7280;
 
     span {
         font-size: 12px;
-        color: $sub;
+        color: var(--text-2);
     }
 
     &:hover {
@@ -535,11 +483,11 @@ $sub: #6b7280;
     }
 
     &.on {
-        border-color: #c9aee8;
-        background: #f7f1fd;
+        border-color: var(--brand-300);
+        background: var(--brand-50);
 
         span {
-            color: $brand;
+            color: var(--brand-700);
             font-weight: 600;
         }
     }
@@ -566,22 +514,22 @@ $sub: #6b7280;
         width: 40px;
         height: 34px;
         border-radius: 8px;
-        border: 1px solid #e6d9c0;
+        border: 1px solid var(--paper-input-border);
         background: #fffdf7;
-        color: #8a7355;
+        color: var(--paper-label);
         font-size: 13px;
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
-            border-color: #c9aee8;
-            color: $brand;
+            border-color: var(--brand-300);
+            color: var(--brand-700);
         }
 
         &.on {
-            background: linear-gradient(135deg, $brand-light, $brand);
+            background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
             border-color: transparent;
-            color: #fff;
+            color: var(--on-brand);
             font-weight: 600;
         }
     }
@@ -589,7 +537,7 @@ $sub: #6b7280;
 
 .level-text {
     font-size: 13px;
-    color: $brand;
+    color: var(--brand-700);
     min-width: 32px;
 }
 
@@ -609,36 +557,36 @@ $sub: #6b7280;
     }
 
     .ghost-btn {
-        border-color: #dfd0b2;
-        color: #6b543a;
+        border-color: var(--paper-border);
+        color: var(--paper-label);
         background: rgba(255, 255, 255, 0.35);
 
         &:hover {
-            border-color: #c9aee8;
-            color: $brand;
-            background: #faf7fd;
+            border-color: var(--brand-300);
+            color: var(--brand-700);
+            background: var(--brand-50);
         }
     }
 
     .save-btn {
         border: none;
-        background: linear-gradient(135deg, $brand-light, $brand);
+        background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
         /* 用 Element 的变量覆盖各状态，避免 hover/active 时串回默认蓝色 */
-        --el-button-bg-color: #{$brand-light};
+        --el-button-bg-color: #{var(--brand-500)};
         --el-button-border-color: transparent;
-        --el-button-hover-bg-color: #{$brand};
+        --el-button-hover-bg-color: #{var(--brand-700)};
         --el-button-hover-border-color: transparent;
-        --el-button-active-bg-color: #{$brand};
+        --el-button-active-bg-color: #{var(--brand-700)};
         --el-button-active-border-color: transparent;
         --el-button-text-color: #fff;
         --el-button-hover-text-color: #fff;
         --el-button-active-text-color: #fff;
         --el-button-disabled-text-color: #fff;
-        color: #fff;
+        color: var(--on-brand);
 
         &:hover {
             background: linear-gradient(135deg, #8b5cc4, #5f2b9c);
-            color: #fff;
+            color: var(--on-brand);
         }
     }
 }

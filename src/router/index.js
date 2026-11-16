@@ -45,6 +45,14 @@ const routes = [
                     title: '知识库',
                     public: true
                 }
+            },
+            {
+                path: 'knowledge/:id',
+                component: () => import('@/views/front/articleDetail.vue'),
+                meta: {
+                    title: '文章详情',
+                    public: true
+                }
             }
         ]
     },

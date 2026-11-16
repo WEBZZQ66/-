@@ -171,6 +171,7 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { mySessions, sessionMessages, startSession, sessionEmotion, streamChat, deleteSession } from '@/api/user'
+import { getTodayMood } from '@/utils/todayMood'
 import robotIcon from '@/assets/images/robot-fill.png'
 
 const ASSISTANT_NAME = '大爱同学'
@@ -386,7 +387,8 @@ const openSession = async (item) => {
     activeSessionId.value = item.id
     messages.value = []
     await loadMessages(item.id)
-    loadEmotion(item.id)
+    //有今日情绪日记就不再用会话分析覆盖
+    if (!applyTodayMood()) loadEmotion(item.id)
 }
 
 /* ---------- 发送消息 ---------- */
@@ -570,6 +572,7 @@ const resetChat = () => {
     messages.value = [createLocalMessage('assistant', GREETING)]
     draft.value = ''
     resetMood()
+    applyTodayMood()
     scrollToBottom()
 }
 
@@ -634,16 +637,32 @@ const loadEmotion = async (rawId) => {
     resetMood()
 }
 
+//今天写过情绪日记的话，情绪花园直接用当天记录，比会话分析更贴近"今天感觉"
+const todayMood = getTodayMood()
+
+const applyTodayMood = () => {
+    if (!todayMood) return false
+    mood.hasData = true
+    mood.label = todayMood.label || '—'
+    mood.icon = todayMood.icon || '🙂'
+    mood.score = todayMood.score
+    mood.today = todayMood.today || '—'
+    mood.level = Math.max(1, Math.min(3, Math.ceil(mood.score / 34)))
+    mood.tip = todayMood.tip || '今天的状态已经记录下来了'
+    return true
+}
+
 const ringStyle = computed(() => {
     const percent = mood.hasData ? Math.min(100, Math.max(0, mood.score)) : 0
     const active = percent * 3.6
     return {
-        background: `conic-gradient(#a97ae0 0deg ${active}deg, #efe9f8 ${active}deg 360deg)`
+        background: `conic-gradient(var(--brand-500) 0deg ${active}deg, var(--border) ${active}deg 360deg)`
     }
 })
 
 /* ---------- 生命周期 ---------- */
 const bootstrap = async () => {
+    applyTodayMood()
     await loadSessions()
     //有历史会话就打开最近的一条，否则保留欢迎语
     if (sessions.value.length) {
@@ -659,24 +678,18 @@ onBeforeUnmount(() => {
 })
 </script>
 <style lang="scss" scoped>
-$brand: #55268e;
-$brand-light: #7b4cb4;
-$border: #ece9f2;
-$text: #1f2937;
-$sub: #6b7280;
-
 .chat-page {
     flex: 1;
     display: flex;
     gap: 16px;
     padding: 16px;
-    /* 扣掉页头 76px 和 footer 56px，聊天区正好一屏；
+    /* 扣掉页头 76px 和 footer 40px，聊天区正好一屏；
        上下都用同一值夹住，内容再多也不会把页面撑高 */
-    min-height: calc(100vh - 132px);
-    max-height: calc(100vh - 132px);
+    min-height: calc(100vh - 116px);
+    max-height: calc(100vh - 116px);
     overflow: hidden;
     box-sizing: border-box;
-    background: #f6f5f9;
+    background: var(--bg-page);
 }
 
 /* ---------- 左侧 ---------- */
@@ -690,7 +703,7 @@ $sub: #6b7280;
 }
 
 .card {
-    background: #fff;
+    background: var(--bg-card);
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 2px 12px rgba(60, 40, 100, 0.05);
@@ -699,7 +712,7 @@ $sub: #6b7280;
 .card-title {
     font-size: 14px;
     font-weight: 600;
-    color: $text;
+    color: var(--text-1);
 }
 
 .profile {
@@ -711,7 +724,7 @@ $sub: #6b7280;
     .profile-name {
         font-size: 16px;
         font-weight: 600;
-        color: $text;
+        color: var(--text-1);
         margin-top: 12px;
     }
 
@@ -739,7 +752,7 @@ $sub: #6b7280;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, $brand-light, $brand);
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
     flex-shrink: 0;
 
     img {
@@ -785,7 +798,7 @@ $sub: #6b7280;
             width: 90px;
             height: 90px;
             border-radius: 50%;
-            background: #fff;
+            background: var(--bg-card);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -800,7 +813,7 @@ $sub: #6b7280;
             .mood-score {
                 font-size: 18px;
                 font-weight: 700;
-                color: $brand;
+                color: var(--brand-700);
             }
         }
     }
@@ -809,18 +822,18 @@ $sub: #6b7280;
         margin-top: 14px;
         text-align: center;
         font-size: 13px;
-        color: $sub;
+        color: var(--text-2);
 
         strong {
             margin-left: 6px;
             font-size: 14px;
-            color: $text;
+            color: var(--text-1);
         }
 
         .mood-emotion {
             margin-left: 6px;
             font-size: 12px;
-            color: #a4a8b2;
+            color: var(--text-3);
         }
     }
 
@@ -834,7 +847,7 @@ $sub: #6b7280;
             width: 18px;
             height: 6px;
             border-radius: 3px;
-            background: #eae5f3;
+            background: var(--border);
 
             &.on {
                 background: #d9b9f2;
@@ -848,14 +861,14 @@ $sub: #6b7280;
         margin-top: 16px;
         padding: 12px;
         border-radius: 12px;
-        background: #faf7fd;
+        background: var(--brand-50);
 
         .tip-icon {
             width: 28px;
             height: 28px;
             flex-shrink: 0;
             border-radius: 50%;
-            background: #f3ecfb;
+            background: var(--brand-100);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -864,14 +877,14 @@ $sub: #6b7280;
 
         .tip-title {
             font-size: 13px;
-            color: $text;
+            color: var(--text-1);
             margin-bottom: 4px;
         }
 
         .tip-text {
             font-size: 13px;
             line-height: 1.6;
-            color: $sub;
+            color: var(--text-2);
         }
     }
 }
@@ -892,7 +905,7 @@ $sub: #6b7280;
         .more-btn {
             padding: 0;
             font-size: 12px;
-            color: $brand-light;
+            color: var(--brand-500);
         }
     }
 
@@ -911,14 +924,14 @@ $sub: #6b7280;
         padding: 28px 0;
         text-align: center;
         font-size: 13px;
-        color: #a4a8b2;
+        color: var(--text-3);
     }
 
     .history-error {
         margin: 8px 0;
         padding: 10px 12px;
         border-radius: 10px;
-        background: #fef0f0;
+        background: rgba(245, 108, 108, 0.12);
         color: #d9534f;
         font-size: 12px;
         line-height: 1.6;
@@ -935,7 +948,7 @@ $sub: #6b7280;
         transition: background-color 0.2s ease;
 
         &:hover {
-            background: #f6f2fb;
+            background: var(--brand-50);
 
             .history-del {
                 opacity: 1;
@@ -943,10 +956,10 @@ $sub: #6b7280;
         }
 
         &.active {
-            background: #f2ecfa;
+            background: var(--brand-100);
 
             .history-name {
-                color: $brand;
+                color: var(--brand-700);
             }
         }
 
@@ -957,7 +970,7 @@ $sub: #6b7280;
 
         .history-name {
             font-size: 13px;
-            color: $text;
+            color: var(--text-1);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -974,7 +987,7 @@ $sub: #6b7280;
             flex: 1;
             min-width: 0;
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--text-3);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -983,7 +996,7 @@ $sub: #6b7280;
         .history-time {
             flex-shrink: 0;
             font-size: 11px;
-            color: #b0b3bb;
+            color: var(--text-3);
         }
 
         .history-del {
@@ -997,7 +1010,7 @@ $sub: #6b7280;
             border: none;
             border-radius: 6px;
             background: transparent;
-            color: #b0b3bb;
+            color: var(--text-3);
             cursor: pointer;
             opacity: 0.45;
             transition: opacity 0.2s ease, color 0.2s ease, background-color 0.2s ease;
@@ -1005,7 +1018,7 @@ $sub: #6b7280;
             &:hover {
                 opacity: 1;
                 color: #f56c6c;
-                background: #fdecec;
+                background: rgba(245, 108, 108, 0.16);
             }
         }
     }
@@ -1017,7 +1030,7 @@ $sub: #6b7280;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--bg-card);
     border-radius: 16px;
     box-shadow: 0 2px 12px rgba(60, 40, 100, 0.05);
     overflow: hidden;
@@ -1028,7 +1041,7 @@ $sub: #6b7280;
     align-items: center;
     gap: 12px;
     padding: 14px 20px;
-    border-bottom: 1px solid $border;
+    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 
     .head-text {
@@ -1038,26 +1051,26 @@ $sub: #6b7280;
         .head-name {
             font-size: 15px;
             font-weight: 600;
-            color: $text;
+            color: var(--text-1);
         }
 
         .head-sub {
             margin-top: 2px;
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--text-3);
         }
     }
 
     .new-btn {
         width: 32px;
         height: 32px;
-        border: 1px solid $border;
-        color: $brand;
+        border: 1px solid var(--border);
+        color: var(--brand-700);
 
         &:hover {
-            background: #f6f2fb;
+            background: var(--brand-50);
             border-color: #dccff0;
-            color: $brand;
+            color: var(--brand-700);
         }
     }
 }
@@ -1081,7 +1094,7 @@ $sub: #6b7280;
     .loading-hint {
         text-align: center;
         font-size: 13px;
-        color: #a4a8b2;
+        color: var(--text-3);
         padding: 8px 0 16px;
     }
 }
@@ -1100,15 +1113,15 @@ $sub: #6b7280;
         }
 
         .bubble {
-            background: linear-gradient(135deg, $brand-light, $brand);
-            color: #fff;
+            background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+            color: var(--on-brand);
             border-radius: 14px 4px 14px 14px;
         }
     }
 
     &.assistant .bubble {
-        background: #f6f4fa;
-        color: $text;
+        background: var(--bg-subtle);
+        color: var(--text-1);
         border-radius: 4px 14px 14px 14px;
     }
 
@@ -1135,7 +1148,7 @@ $sub: #6b7280;
 
     .msg-time {
         font-size: 12px;
-        color: #b0b3bb;
+        color: var(--text-3);
     }
 
     .retry-btn {
@@ -1147,10 +1160,10 @@ $sub: #6b7280;
         background: none;
         cursor: pointer;
         font-size: 12px;
-        color: $brand-light;
+        color: var(--brand-500);
 
         &:hover {
-            color: $brand;
+            color: var(--brand-700);
             text-decoration: underline;
         }
     }
@@ -1186,7 +1199,7 @@ $sub: #6b7280;
     align-items: flex-end;
     gap: 12px;
     padding: 12px 20px 18px;
-    border-top: 1px solid $border;
+    border-top: 1px solid var(--border);
 
     .composer-input {
         flex: 1;
@@ -1194,14 +1207,14 @@ $sub: #6b7280;
         :deep(.el-textarea__inner) {
             border-radius: 14px;
             padding: 11px 14px;
-            background: #f8f7fb;
-            box-shadow: 0 0 0 1px #ece9f2 inset;
+            background: var(--bg-subtle);
+            box-shadow: 0 0 0 1px var(--border) inset;
             font-size: 14px;
             line-height: 1.6;
 
             &:focus {
-                background: #fff;
-                box-shadow: 0 0 0 1px $brand-light inset;
+                background: var(--bg-card);
+                box-shadow: 0 0 0 1px var(--brand-500) inset;
             }
         }
     }
@@ -1211,8 +1224,8 @@ $sub: #6b7280;
         height: 42px;
         flex-shrink: 0;
         border: none;
-        background: linear-gradient(135deg, $brand-light, $brand);
-        color: #fff;
+        background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+        color: var(--on-brand);
         font-size: 18px;
 
         &:hover:not(.is-disabled) {
@@ -1221,8 +1234,8 @@ $sub: #6b7280;
         }
 
         &.is-disabled {
-            background: #e6e2ee;
-            color: #fff;
+            background: var(--border);
+            color: var(--text-3);
         }
     }
 }
