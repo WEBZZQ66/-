@@ -2,14 +2,51 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import BackendLayout from '@/components/BackendLayout.vue'
 import AuthLayout from '@/components/AuthLayout.vue'
+import FrontendLayout from '@/components/FrontendLayout.vue'
 
 //userType: 1 普通用户（前台），2 管理员（后台）
 const ADMIN_USER_TYPE = 2
 //配置路由
-const backendRoutes = [
+const routes = [
+    //用户端：共用 FrontendLayout（页头 + router-view + footer）
+    //meta 写在子路由上，父级不写，避免 public 被所有子页面继承
     {
         path: '/',
-        redirect: '/auth/login'
+        component: FrontendLayout,
+        children: [
+            {
+                path: '',
+                component: () => import('@/views/front/Home.vue'),
+                meta: {
+                    title: '首页',
+                    public: true
+                }
+            },
+            {
+                path: 'consultation',
+                component: () => import('@/views/front/consultation.vue'),
+                meta: {
+                    title: 'AI咨询',
+                    requiresAuth: true
+                }
+            },
+            {
+                path: 'emotion-diary',
+                component: () => import('@/views/front/emotionDiary.vue'),
+                meta: {
+                    title: '情绪日记',
+                    requiresAuth: true
+                }
+            },
+            {
+                path: 'knowledge',
+                component: () => import('@/views/front/knowledge.vue'),
+                meta: {
+                    title: '知识库',
+                    public: true
+                }
+            }
+        ]
     },
     {
         path: '/back',
@@ -80,7 +117,7 @@ const backendRoutes = [
 ]
 const router = createRouter({
     history: createWebHistory(),  // 使用HTML5 History模式，URL不带 # 号
-    routes: backendRoutes
+    routes
 })
 
 //读取本地登录态
@@ -105,11 +142,20 @@ const clearAuth = () => {
 
 //前置守卫：区分前后台用户
 router.beforeEach((to) => {
+    //公开页面（用户端首页等）不做登录校验
+    if (to.meta?.public) return true
+
     const { token, isAdmin } = getAuthState()
 
-    //登录/注册页：已登录的管理员直接进后台，不用重复登录
+    //登录/注册页：已登录就不必再登录，管理员进后台、普通用户进用户端
     if (to.path.startsWith('/auth')) {
-        return token && isAdmin ? '/back/dashboard' : true
+        if (!token) return true
+        return isAdmin ? '/back/dashboard' : '/'
+    }
+
+    //用户端需要登录的页面：普通用户也可以进，不校验管理员身份
+    if (to.meta?.requiresAuth) {
+        return token ? true : { path: '/auth/login', query: { redirect: to.fullPath } }
     }
 
     //未登录：跳到登录页，并记住原本要去的地址

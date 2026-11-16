@@ -35,7 +35,6 @@
 import { ref, reactive } from 'vue'
 import { login } from '@/api/admin'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 
 const ruleFormRef = ref()
 const router = useRouter()
@@ -56,7 +55,7 @@ const rules = reactive({
 // 提交表单
 const submitForm = async (formEl) => {
   if (!formEl) return
-  await formEl.validate((valid, fields) => {
+  await formEl.validate((valid) => {
     if (valid) {
       login(formData).then(data => {
         //判断token是否存在
@@ -66,19 +65,20 @@ const submitForm = async (formEl) => {
         //登录成功，保存token和用户信息
         localStorage.setItem('token', data.token)
         localStorage.setItem('userInfo', JSON.stringify(data.userInfo))
-        //普通用户（userType: 1）没有管理端权限，清掉凭据并提示
-        if (Number(data.userInfo?.userType) !== 2) {
-          localStorage.removeItem('token')
-          localStorage.removeItem('userInfo')
-          ElMessage.error('该账号没有管理端权限')
-          return
-        }
-        //管理员才进后台，优先回到被守卫拦下的页面
+
+        //优先回到被守卫拦下的页面（只接受站内路径）
         const rawRedirect = typeof route.query.redirect === 'string' ? route.query.redirect : ''
         const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
           ? rawRedirect
-          : '/back/dashboard'
-        router.push(redirect)
+          : ''
+
+        //userType: 2 管理员进后台，其它（普通用户）进用户端
+        if (Number(data.userInfo?.userType) === 2) {
+          router.push(redirect || '/back/dashboard')
+        } else {
+          //普通用户不允许进后台，redirect 指向 /back 时忽略
+          router.push(redirect && !redirect.startsWith('/back') ? redirect : '/')
+        }
       })
       // 处理登录逻辑
     } else {

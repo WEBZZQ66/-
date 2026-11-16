@@ -7,6 +7,10 @@ export function login(data) {
 export function logout() {
   return service.post('/user/logout')
 }
+//注册
+export function register(data) {
+  return service.post('/user/add', data)
+}
 //获取分类
 export function categoryTree() {
   return service.get('/knowledge/category/tree') //由于后端接口没有参数所以不需要传参
