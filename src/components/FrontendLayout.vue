@@ -41,7 +41,7 @@
     </div>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout } from '@/api/admin'
@@ -52,6 +52,14 @@ const route = useRoute()
 
 //当前是否已登录，登录/退出后导航栏跟着切换
 const loggedIn = ref(Boolean(localStorage.getItem('token')))
+
+//登录态可能被接口拦截器清掉（token 过期），切页面时重新读一次，避免导航栏显示错误状态
+watch(
+    () => route.fullPath,
+    () => {
+        loggedIn.value = Boolean(localStorage.getItem('token'))
+    }
+)
 
 const goLogin = () => router.push('/auth/login')
 const goRegister = () => router.push('/auth/register')

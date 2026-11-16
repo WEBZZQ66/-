@@ -32,12 +32,23 @@ service.interceptors.response.use(
     } else if (data.code === "-1") {
       //登陆超时
       if (!config.url?.includes("/login")) {
-        ElMessage.error(data.message || "登录超时，请重新登录")
-        localStorage.removeItem("token")
-        localStorage.removeItem("userInfo")
-        window.location.href = "/auth/login"
+        console.warn('[request] 登录态失效：', config.url, data)
+        if (config.skipAuthRedirect) {
+          //个别页面（如用户端咨询页）希望自己处理失败，不把用户整体踢出去
+          if (!config.silentError) {
+            ElMessage.error(data.msg || data.message || "请求失败")
+          }
+        } else {
+          ElMessage.error(data.msg || data.message || "登录超时，请重新登录")
+          localStorage.removeItem("token")
+          localStorage.removeItem("userInfo")
+          //记住当前页面，重新登录后能回到原处，而不是统一回首页
+          const current = window.location.pathname + window.location.search
+          const redirect = current.startsWith("/auth") ? "" : `?redirect=${encodeURIComponent(current)}`
+          window.location.href = `/auth/login${redirect}`
+        }
       }
-      return Promise.reject(new Error(data.message || "登录超时"))
+      return Promise.reject(new Error(data.msg || data.message || "登录超时"))
     } else {
       ElMessage.error(data.message || "请求失败")
       return Promise.reject(new Error(data.message || "请求失败"))
